@@ -129,3 +129,8 @@ def generate(n_words):
     return ' '.join(random.choices(WORDS_LIST, weights=WEIGHT_LIST, k=n_words))
 
 print(f"Vocabulary size: {len(ALL_WORDS)} words  ({len(FREQ_TIERS[0])} tier0, extras: {len(EXTRA_WORDS)})")
+
+if __name__ == '__main__':
+    import sys
+    n = int(sys.argv[1]) if len(sys.argv) > 1 else 250
+    print(generate(n))
