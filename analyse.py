@@ -1,33 +1,47 @@
-import os, sys
-sys.path.insert(0, '/home/claude/project2')
-from encoder import encode, matrix_size_bits, clean_text
-from dictionary import HUFFMAN_CODES, REVERSE_CODES
+"""
+analyse.py
+----------
+Runs test cases on sample text files and shows full size breakdown
+comparing original ASCII storage vs matrix (Huffman) storage.
+
+Usage:
+    python analyse.py
+"""
+
+import os
+import sys
+from encoder import encode, matrix_size_bits, clean
 from layout import TOTAL_BOXES, BITS_X, BITS_Z, BOX_W
 
+
 def analyse(path):
+    if not os.path.exists(path):
+        print(f"[!] File not found: {path}")
+        return
+
     raw_bytes = os.path.getsize(path)
     raw_bits  = raw_bytes * 8
-    words     = clean_text(open(path).read())
-    in_dict   = [w for w in words if w in HUFFMAN_CODES]
+    words     = clean(open(path, encoding='utf-8').read())
 
-    matrix, pages = encode(path)
-    word_rows     = [r for r in matrix if r[3] != 0]
+    matrix, pages, CODES, REVERSE, stats = encode(path)
+
+    word_rows    = [r for r in matrix if not (r[2] == 0 and r[1] == 0)]
     matrix_bits, fixed = matrix_size_bits(matrix)
 
-    avg_code = sum(len(r[3]) for r in word_rows) / max(len(word_rows),1)
+    avg_code = sum(len(r[3]) for r in word_rows) / max(len(word_rows), 1)
     savings  = raw_bits - matrix_bits
 
     print(f'\n{"="*56}')
     print(f'  {path}')
     print(f'{"="*56}')
     print(f'  Total words           : {len(words)}')
-    print(f'  Encoded words         : {len(word_rows)}  ({len(word_rows)/len(words)*100:.1f}%)')
+    print(f'  Encoded words         : {len(word_rows)}  ({len(word_rows)/max(len(words),1)*100:.1f}%)')
     print(f'  Pages used            : {pages}  ({TOTAL_BOXES} lines/page)')
     print(f'  Page separator rows   : {pages}  (format: [page_num, 0, 0, 0])')
 
     print(f'\n  ORIGINAL (plain ASCII):')
     print(f'    Size                : {raw_bits} bits  ({raw_bytes} bytes)')
-    print(f'    Cost per word       : ~{raw_bits//max(len(words),1)} bits avg  (8 bits per char)')
+    print(f'    Cost per word       : ~{raw_bits // max(len(words),1)} bits avg  (8 bits per char)')
 
     print(f'\n  MATRIX STORAGE:')
     print(f'    x  (0-{BOX_W})     : {BITS_X} bits')
@@ -47,14 +61,18 @@ def analyse(path):
     print(f'    {"-"*54}')
     shown = 0
     for row in matrix[:8]:
-        x,y,z,code = row
-        if code == 0:
+        x, y, z, code = row
+        if y == 0 and z == 0:
             print(f'    {"PAGE SEP":<12} {x:>5} {y:>3} {z:>3}  {"0":<10} page {x} starts here')
         else:
-            word = REVERSE_CODES[code]
+            word = REVERSE.get(code, '???')
             print(f'    {"word":<12} {x:>5} {y:>3} {z:>3}  {code:<10} "{word}"')
             shown += 1
-            if shown == 5: break
+            if shown == 5:
+                break
 
-for f in ['one_page.txt','five_pages.txt','twenty_pages.txt']:
-    analyse(f)
+
+if __name__ == '__main__':
+    files = sys.argv[1:] if len(sys.argv) > 1 else ['one_page.txt', 'five_pages.txt', 'twenty_pages.txt']
+    for f in files:
+        analyse(f)
