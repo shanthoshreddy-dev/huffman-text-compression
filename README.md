@@ -1,6 +1,6 @@
 LAYOUT-AWARE TEXT COMPRESSION — SINGLE DICTIONARY HUFFMAN
 ==========================================================
-Average compression: 36.8% across 30 test cases (1 page to 10,000 pages)
+Average compression: 36.8% across 50 test cases (1 page to 1,00,00,000 pages)
 
 FILES:
   dictionary.py   — builds Huffman codes dynamically from input text
